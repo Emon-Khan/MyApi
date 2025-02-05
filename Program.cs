@@ -1,7 +1,10 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using MyApi.Data;
+using MyApi.Dto;
 using MyApi.Extensions;
 using MyApi.Handlers;
+using MyApi.Models;
 using MyApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ITodoService, TodoService>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddAutoMapper(typeof(GenericMappingProfile)); // Registering the profile
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
