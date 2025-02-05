@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyApi.Data;
 using MyApi.Models;
 using Microsoft.EntityFrameworkCore.Metadata;
+using MyApi.Services;
 
 namespace MyApi.Controllers
 {
@@ -10,65 +11,67 @@ namespace MyApi.Controllers
     [ApiController]
     public class TodoController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ITodoService _todoService;
 
-        public TodoController(AppDbContext context)
+        public TodoController(ITodoService todoService)
         {
-            _context = context;
+            _todoService = todoService;
         }
 
         private bool TodoItemExists(int id){
-            return _context.TodoItems.Any(e=>e.Id==id);
+            return _todoService.TodoItemExists(id);
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems()
+        public ActionResult<IEnumerable<TodoItem>> GetTodoItems()
         {
-            return await _context.TodoItems.ToListAsync();
+            return Ok(_todoService.GetAllTodoItems());
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> GetTodoItem(int id){
-            var todoItem = await _context.TodoItems.FindAsync(id);
-            if(todoItem==null){
-                return NotFound();
+        public ActionResult<TodoItem> GetTodoItem(int id){
+            try{
+                var item = _todoService.GetItem(id);
+                return Ok(item);
             }
-            return todoItem;
+            catch(KeyNotFoundException ex){
+                return NotFound(new{message = ex.Message});
+            }
+            catch(Exception ex){
+                return StatusCode(500, new {message="An error occurred while processing your request.", details = ex.Message});
+            }
         }
 
         [HttpPost]
         public async Task<ActionResult<TodoItem>> PostTodoItem(TodoItem todoItem)
         {
-            _context.TodoItems.Add(todoItem);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetTodoItems), new { id = todoItem.Id }, todoItem);
+            var createdItem = await _todoService.AddTodoItemAsync(todoItem);
+            return CreatedAtAction(nameof(GetTodoItems), new { id = createdItem.Id }, createdItem);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<TodoItem>> PutTodoItem(int id, TodoItem todoItem){
-            if(id!=todoItem.Id){
-                return BadRequest();
-            }
-            _context.Entry(todoItem).State = EntityState.Modified;
+        public async Task<IActionResult> PutTodoItem(int id, TodoItem todoItem){
             try{
-                await _context.SaveChangesAsync();
-            }catch(DbUpdateConcurrencyException){
-                if(!TodoItemExists(id)){
-                    return NotFound();
-                }else{
-                    throw;
-                }
+                var updatedItem = await _todoService.UpdateTodoItemAsync(id, todoItem);
+                return Ok(updatedItem);
+            }catch(KeyNotFoundException ex){
+                return NotFound(new {message=ex.Message});
+            }catch(Exception ex){
+                return StatusCode(500, new{message="An error occurred while processing your request.", details=ex.Message});
             }
-            return NoContent();
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodoItem(int id){
-            var todoItem = await _context.TodoItems.FindAsync(id);
-            if(todoItem==null){
-                return NotFound();
+            try{
+                await _todoService.DeleteTodoItemAsync(id);
+                return NoContent();
             }
-            _context.TodoItems.Remove(todoItem);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            catch(KeyNotFoundException ex){
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your request.", details = ex.Message });
+            }
         }
     
     }
