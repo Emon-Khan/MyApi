@@ -1,8 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using MyApi.Data;
 using MyApi.Models;
-using Microsoft.EntityFrameworkCore.Metadata;
 using MyApi.Services;
 
 namespace MyApi.Controllers
@@ -29,16 +26,9 @@ namespace MyApi.Controllers
         }
         [HttpGet("{id}")]
         public ActionResult<TodoItem> GetTodoItem(int id){
-            try{
-                var item = _todoService.GetItem(id);
-                return Ok(item);
-            }
-            catch(KeyNotFoundException ex){
-                return NotFound(new{message = ex.Message});
-            }
-            catch(Exception ex){
-                return StatusCode(500, new {message="An error occurred while processing your request.", details = ex.Message});
-            }
+            
+            var item = _todoService.GetItem(id);
+            return Ok(item);
         }
 
         [HttpPost]
@@ -50,28 +40,16 @@ namespace MyApi.Controllers
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTodoItem(int id, TodoItem todoItem){
-            try{
-                var updatedItem = await _todoService.UpdateTodoItemAsync(id, todoItem);
-                return Ok(updatedItem);
-            }catch(KeyNotFoundException ex){
-                return NotFound(new {message=ex.Message});
-            }catch(Exception ex){
-                return StatusCode(500, new{message="An error occurred while processing your request.", details=ex.Message});
-            }
+            
+            var updatedItem = await _todoService.UpdateTodoItemAsync(id, todoItem);
+            return Ok(updatedItem);
+            
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodoItem(int id){
-            try{
-                await _todoService.DeleteTodoItemAsync(id);
-                return NoContent();
-            }
-            catch(KeyNotFoundException ex){
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while processing your request.", details = ex.Message });
-            }
+           
+            await _todoService.DeleteTodoItemAsync(id);
+            return NoContent();
         }
     
     }

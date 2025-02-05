@@ -50,7 +50,7 @@ namespace MyApi.Services
             }
 
             existingItem.Name = todoItem.Name;
-            existingItem.IsCompleted = todoItem.IsCompleted;
+            existingItem.IsComplete = todoItem.IsComplete;
 
             _context.TodoItems.Update(existingItem);
             await _context.SaveChangesAsync();
